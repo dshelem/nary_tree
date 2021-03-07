@@ -14,10 +14,12 @@ namespace sds {
     const char* MAGIC_TAG   = "sds";
     // версия сериализатора
     const int VERSION       = 1;
+    // идентификатор корня
+    const char* ROOT_STR   = "root";
     // ширина консоли (в символах)
     const int CON_WIDTH = 136;
     // ширина узла (в символах)
-    const int NODE_WIDTH = 18;
+    const int NODE_WIDTH = 14;
 
 } // namespace sds
 
