@@ -13,7 +13,7 @@ namespace sds {
     // формат файла
     const char* MAGIC_TAG   = "sds";
     // версия сериализатора
-    constexpr int VERSION       = 1;
+    const int VERSION       = 1;
 
 } // namespace sds
 

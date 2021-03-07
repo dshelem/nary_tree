@@ -13,6 +13,8 @@
 #include <vector>
 #include <ostream>
 #include <istream>
+#include <iomanip>
+#include <iostream>
 
 namespace sds {
 
@@ -51,6 +53,43 @@ namespace sds {
         return any.type() == typeid(std::string);
     }
 
+    // для расширения типов добавить обработку типа сюда, 
+    // добавить функцию isNewType(...) и новый тип в enum class NodeType
+
+    std::ostream& operator<<(std::ostream& os, const std::any& any)
+    {
+        if(sds::isChar(any)) {
+            os << std::any_cast<char>(any);
+        }
+        else if(sds::isInt(any))
+        {
+            os << std::any_cast<int>(any);
+        }
+        else if(sds::isLong(any))
+        {
+            os << std::any_cast<long>(any);
+        }
+        else if(sds::isDouble(any))
+        {
+            os << std::any_cast<double>(any);
+        }
+        else if(sds::isString(any))
+        {
+            std::string string = std::any_cast<std::string>(any);
+            if(&os != &std::cout) {
+                os << string.size() << sds::DELIM << std::quoted(string);
+            }
+            else {
+                os << std::quoted(string);        
+            }
+        }
+        else {
+            throw sds::BadNodeTypeFormat("Unsupported format of std::any object");
+        }
+        
+        return os;
+    }
+
     NodeType getNodeTypeFromAny(std::any const& any) 
     {
         if(sds::isChar(any)) {
@@ -85,10 +124,11 @@ namespace sds {
 
     struct Node
     {
-        // так как дерево будет возвращать узлы по методу find и т.д.
-        using PointerType = std::shared_ptr<Node>;
+        // объявления типов
 
-        // для возможность быстрой вставки / удаления узлов из любой части списка
+        // так как дерево будет возвращать узлы после вставки - расшаренное владение
+        using PointerType = std::shared_ptr<Node>;
+        // контейнер для ссылок на дочерние элементы
         using KidsContainerType = std::vector<PointerType>;
 
         /*
@@ -103,9 +143,9 @@ namespace sds {
         KidsContainerType kids;
 
         // структоры
-        Node(): data(), type(NodeType::Undefined) {}
-        Node(std::any const& any): data(any), type(getNodeTypeFromAny(data)) {}
-        Node(std::any && any): data(std::move(any)), type(getNodeTypeFromAny(data)) {}
+        Node(): data(), type(NodeType::Undefined), kids() {}
+        Node(std::any const& any): data(any), type(getNodeTypeFromAny(data)), kids() {}
+        Node(std::any && any): data(std::move(any)), type(getNodeTypeFromAny(data)), kids() {}
         Node(Node const& other): data(other.data), type(other.type), kids(other.kids) {}
         Node(Node && other) noexcept: data(std::move(other.data)), type(other.type), kids(std::move(other.kids)) {}
         ~Node() = default;
@@ -141,7 +181,7 @@ namespace sds {
         }
 
         // запросы
-        bool empty() const noexcept {
+        bool isEmpty() const noexcept {
             return type == NodeType::Undefined;
         }
         const std::type_info & getType() const noexcept {
@@ -199,10 +239,12 @@ namespace sds {
                     if(delim != sds::DELIM) {
                         throw DeserialisationException("Wrong input file format");
                     }
+                    is.ignore(1);       // первая кавычка
                     for(int i = 0; i != size; ++i) {
                         is.get(c);
                         str.push_back(c);
                     }
+                    is.ignore(1);       // вторая кавычка
                     node.data = std::move(str);
                     break;
 
@@ -217,46 +259,13 @@ namespace sds {
     };
 
     // мейкеры
-    Node::PointerType makePointer(Node const& node) {
+    inline Node::PointerType makePointer(Node const& node) {
         return std::make_unique<Node>(node);
     }
-    Node::PointerType makePointer(Node && node) {
+    inline Node::PointerType makePointer(Node && node) {
         return std::make_unique<Node>(std::move(node));
     }
 
-
 } // namespace sds
-
-// для расширения типов добавить перечисления сюда, 
-// добавить функцию isNewType(...) и новый тип в enum class NodeType
-
-std::ostream& operator<<(std::ostream& os, const std::any& any)
-{
-    if(sds::isChar(any)) {
-        os << std::any_cast<char>(any);
-    }
-    else if(sds::isInt(any))
-    {
-        os << std::any_cast<int>(any);
-    }
-    else if(sds::isLong(any))
-    {
-        os << std::any_cast<long>(any);
-    }
-    else if(sds::isDouble(any))
-    {
-        os << std::any_cast<double>(any);
-    }
-    else if(sds::isString(any))
-    {
-        std::string string = std::any_cast<std::string>(any);
-        os << string.size() << sds::DELIM << string.c_str();
-    }
-    else {
-        throw sds::BadNodeTypeFormat("Unsupported format of std::any object");
-    }
-    
-    return os;
-}
 
 #endif

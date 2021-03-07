@@ -3,9 +3,6 @@
 
 int main()
 {
-
-    std::cout << "Start\n";
-
     sds::Node node = sds::Node(std::make_any<int>(8));
     sds::NaryTree tree(node);
 
@@ -21,9 +18,10 @@ int main()
     tree.addChild(child2, sds::Node(std::make_any<std::string>("foo")));
     sds::Node::PointerType child22 = tree.addChild(child2, sds::Node(std::make_any<double>(6.28318)));
 
+    tree.addChild(child11, sds::Node(std::make_any<int>(9)));
     tree.addChild(child22, sds::Node(std::make_any<std::string>("hello")));
 
-    std::cout << "Finish\n";
+    tree.print();
 
     return 0;
 }
