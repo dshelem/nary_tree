@@ -68,12 +68,9 @@ int main()
     sds::NaryTree tree = sds::NaryTree();
 
     if(__linux__) system("clear");
-    std::cout << "BEFORE LOAD:\n\n";
-    tree.print();
 
     loadTreeFromFile(tree, in_file_name);
-
-    std::cout << "\n\nAFTER LOAD:\n\n";
+    
     tree.print();
 
     saveTreeToFile(tree, out_file_name);    

@@ -169,8 +169,11 @@ namespace sds {
             std::vector<Node::PointerType> save_data(std::move(prepareNodesVector()));
 
             outputHeader(os);
-            for(auto elem: save_data) {
-                os << *elem << EOL;
+            for(std::size_t i = 0; i != save_data.size(); ++i) {
+                os << *save_data[i];
+                if(i != (save_data.size() - 1)) {
+                    os << EOL;
+                }
             }
         }
 
