@@ -61,7 +61,12 @@ namespace sds {
     std::ostream& operator<<(std::ostream& os, const std::any& any)
     {
         if(sds::isChar(any)) {
-            os << std::any_cast<char>(any);
+            if(&os == &std::cout) {
+                os << "'" << std::any_cast<char>(any) << "'";
+            }
+            else {
+                os << std::any_cast<char>(any);
+            }
         }
         else if(sds::isInt(any))
         {
@@ -86,9 +91,9 @@ namespace sds {
             }
         }
         else {
-            std::string str(std::to_string(__LINE__));
-            str += ": Unsupported format of std::any object";
-            throw sds::BadNodeTypeFormat(str.c_str());
+            std::string msg(__FILE__);
+            msg += ": " + std::to_string(__LINE__ - 1) + ": Unsupported format of std::any object";
+            throw sds::BadNodeTypeFormat(msg);
         }
         
         return os;
@@ -116,9 +121,9 @@ namespace sds {
             return sds::NodeType::String;
         }
         else {
-            std::string str(std::to_string(__LINE__));
-            str += ": Unsupported format of std::any object";
-            throw sds::BadNodeTypeFormat(str.c_str());
+            std::string msg(__FILE__);
+            msg += ": " + std::to_string(__LINE__ - 1) + ": Unsupported format of std::any object";
+            throw sds::BadNodeTypeFormat(msg);
         }
         
         return sds::NodeType::Undefined;
@@ -163,9 +168,10 @@ namespace sds {
 
     public:
         // структоры
-        Node() = delete;
+        Node(): id(Node::counter++), parent(std::nullopt), data(std::make_any<std::string>("Dummy Node")), 
+            type(getNodeTypeFromAny(data)), level(0), kids() {}
         Node(std::any const& any, std::optional<std::size_t> const& parent, std::size_t level): 
-            id(Node::counter++), parent(parent), data(any), type(getNodeTypeFromAny(any)), level(level), kids() {}
+            id(Node::counter++), parent(parent), data(any), type(getNodeTypeFromAny(data)), level(level), kids() {}
         Node(std::any && any, std::optional<std::size_t> && parent, std::size_t level): 
             id(Node::counter++), parent(parent), data(std::move(any)), type(getNodeTypeFromAny(data)), 
             level(level), kids() {}
@@ -237,83 +243,135 @@ namespace sds {
 
             return os;
         }
-
-        /*
-        friend std::istream& operator>>(std::istream& is, Node& node)
+        static std::pair<std::any, std::optional<std::size_t>> parseNode(std::istream& is)
         {
-            char c, delim;
-            short type;
-            int i;
-            long l;
-            double d;
-            std::string str;
+            char ch;
+            int int_value;
+            long long_value;
+            double double_value;
+            std::size_t str_len;
+            NodeType node_type;
+            std::string string;
+            std::optional<std::size_t> opt_parent;
+            std::any any_value;
 
-            is.ignore(1); // [
-            is >> node.id; //
+            is.ignore(1); // {
 
-            is >> type;
-            node.type = static_cast<NodeType>(type);
-
-            switch(node.type)
+            // parent
+            while(is.get(ch))
             {
-                case NodeType::Undefined:
-                    throw DeserialisationException("Undefined NodeType");
+                if(ch != '}') {
+                    string.push_back(ch);
+                }
+                else {
                     break;
-
-                case NodeType::Char:
-                    is >> c;
-                    node.data = c;
-                    break;
-
-                case NodeType::Int:
-                    is >> i;
-                    node.data = i;
-                    break;
-
-                case NodeType::Long:
-                    is >> l;
-                    node.data = l;
-                    break;
-
-                case NodeType::Double:
-                    is >> d;
-                    node.data = d;
-                    break;
-
-                case NodeType::String:
-                    int size;
-                    is >> size;
-                    is >> delim;
-                    if(delim != sds::DELIM) {
-                        throw DeserialisationException("Wrong input file format");
-                    }
-                    is.ignore(1);       // первая кавычка
-                    for(int i = 0; i != size; ++i) {
-                        is.get(c);
-                        str.push_back(c);
-                    }
-                    is.ignore(1);       // вторая кавычка
-                    node.data = std::move(str);
-                    break;
-
-                default:
-                    throw sds::BadNodeTypeFormat("Unsupported format of std::any object");
-                    break;
+                }
             }
 
-            return is;
-        }*/
+            if(string == ROOT_STR) {
+                opt_parent = std::nullopt;
+            }
+            else {
+                opt_parent = std::stoul(string);
+            }
 
-        
+            is.ignore(1); // ' ' (space)
+            string.clear();
+
+            // node_type
+            while(is.get(ch))
+            {
+                if(ch != DELIM) {
+                    string.push_back(ch);
+                }
+                else {
+                    break;
+                }
+            }
+
+            node_type = static_cast<NodeType>(std::stoi(string));
+
+            string.clear();
+
+            if(node_type == NodeType::Char) {
+                is.get(ch);
+                any_value = ch;
+            }
+            else if(node_type == NodeType::Int) {
+
+                while(is.get(ch))
+                {
+                    string.push_back(ch);
+                }
+
+                int_value = std::stoi(string);
+
+                string.clear();
+
+                any_value = int_value;
+            }
+            else if(node_type == NodeType::Long) {
+
+                while(is.get(ch))
+                {
+                    string.push_back(ch);
+                }
+
+                long_value = std::stol(string);
+
+                string.clear();
+
+                any_value = long_value;
+            }
+            else if(node_type == NodeType::Double) {
+
+                while(is.get(ch))
+                {
+                    string.push_back(ch);
+                }
+
+                double_value = std::stod(string);
+
+                string.clear();
+
+                any_value = double_value;
+            }
+            else if(node_type == NodeType::String) {
+                // str_len
+                while(is.get(ch))
+                {
+                    if(ch != DELIM) {
+                        string.push_back(ch);
+                    }
+                    else {
+                        break;
+                    }
+                }
+                str_len = std::stoul(string);
+
+                string.clear();
+
+                // string itself
+                for(std::size_t i = 0; i != str_len; ++i) {
+                    is.get(ch);
+                    string.push_back(ch);
+                }
+
+                any_value = string;
+
+                string.clear();
+            }
+            else {
+                std::string msg(__FILE__);
+                msg += ": " + std::to_string(__LINE__ - 1) + ": Unsupported format of std::any object";
+                throw sds::DeserialisationException(msg);
+            }
+
+            return std::make_pair(any_value, opt_parent);
+        }
     };
 
     // мейкеры
-    inline Node::PointerType makePointer(Node const& node) {
-        return std::make_unique<Node>(node);
-    }
-    inline Node::PointerType makePointer(Node && node) {
-        return std::make_unique<Node>(std::move(node));
-    }
     inline Node::PointerType 
     makePointer(std::any const& data, std::optional<std::size_t> const& parent, std::size_t level)
     {
@@ -323,6 +381,12 @@ namespace sds {
     makePointer(std::any && data, std::optional<std::size_t> && parent, std::size_t level)
     {
         return std::make_shared<Node>(std::move(data), std::move(parent), level);
+    }
+    inline Node::PointerType makePointer(Node const& node) {
+        return std::make_unique<Node>(node);
+    }
+    inline Node::PointerType makePointer(Node && node) {
+        return std::make_unique<Node>(std::move(node));
     }
 
 } // namespace sds

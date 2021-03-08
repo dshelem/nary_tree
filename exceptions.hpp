@@ -5,6 +5,7 @@
 #define SDS_EXCEPTIONS_HPP
 
 #include <stdexcept>
+#include <string>
 
 namespace sds {
 
@@ -13,13 +14,13 @@ namespace sds {
     class BadNodeTypeFormat: public std::runtime_error
     {
     public:
-        BadNodeTypeFormat(const char* msg): std::runtime_error(msg) {};
+        BadNodeTypeFormat(std::string const& msg): std::runtime_error(msg) {};
     };
 
     class DeserialisationException: public std::runtime_error
     {
     public:
-        DeserialisationException(const char* msg): std::runtime_error(msg) {};
+        DeserialisationException(std::string const& msg): std::runtime_error(msg) {};
     };
 
 

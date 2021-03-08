@@ -1,0 +1,5 @@
+<magic_tag><version>
+
+
+type     value   (if string)
+      :            15:

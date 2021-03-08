@@ -1,8 +1,3 @@
-// https://www.studytonight.com/advanced-data-structures/nary-tree
-// https://habr.com/ru/post/273687/
-// https://linux.thai.net/~thep/datrie/datrie.html
-
-
 // Модель определения N-ary Tree
 // Автор Д. Шелемех, 2021
 
@@ -25,6 +20,7 @@ namespace sds {
     public:
 
         // структоры
+        NaryTree(): root(std::make_shared<Node>()) {}
         NaryTree(std::any const& data, std::optional<std::size_t> const& parent, std::size_t level): 
             root(std::make_shared<Node>(data, parent, level)) {}
         NaryTree(std::any && data, std::optional<std::size_t> && parent, std::size_t level): 
@@ -37,7 +33,7 @@ namespace sds {
             return root;
         }
         // breadth-first search
-        Node::PointerType getNodeById(std::size_t id) {
+        Node::PointerType findNodeById(std::size_t id) {
 
             std::deque<Node::PointerType> deque;
             deque.push_back(root);
@@ -67,8 +63,22 @@ namespace sds {
             parent->kids.push_back(sds::makePointer(std::move(data), std::make_optional<std::size_t>(parent->id), parent->level + 1));
             return parent->kids.back();
         }
-
-        using NodeHandlingHelperType = std::tuple<Node::PointerType, std::optional<std::size_t>, std::size_t>;
+        void insertNode(std::pair<std::any, std::optional<std::size_t>> const& node)
+        {
+            if(!node.second) { // root
+                root->data = node.first;
+                root->type = getNodeTypeFromAny(root->data);
+                root->parent = node.second;
+            }
+            else { // not root
+                Node::PointerType node_to_add_to = findNodeById(*node.second); // find parent
+                if(!node_to_add_to) {
+                    std::string msg = "Couldn't find node with ID = " + std::to_string(*node.second);
+                    throw std::runtime_error(msg);
+                }
+                addChild(node_to_add_to, node.first);
+            }
+        }
 
         // breadth-first algorithm
         std::vector<Node::PointerType> prepareNodesVector()
@@ -147,6 +157,65 @@ namespace sds {
             }
 
             std::cout << "\n";
+        }
+
+        void outputHeader(std::ostream& os)
+        {
+            os << MAGIC_TAG << DELIM << VERSION << "\n";
+        }
+
+        void saveTree(std::ostream& os)
+        {
+            std::vector<Node::PointerType> save_data(std::move(prepareNodesVector()));
+
+            outputHeader(os);
+            for(auto elem: save_data) {
+                os << *elem << EOL;
+            }
+        }
+
+        void checkHeader(std::istream& is)
+        {
+            char ch;
+            std::string tag, version;
+
+            // читаем до разделителя
+            while(is.get(ch))
+            {
+                if(ch != DELIM) {
+                    tag.push_back(ch);
+                }
+                else {
+                    break;
+                }
+            }
+            
+            if(tag != MAGIC_TAG) {
+                throw std::runtime_error("Wrong input file format");
+            }
+
+            while(is.get(ch))
+            {
+                version.push_back(ch);
+            }
+
+            if(std::stoi(version) != VERSION) {
+                throw std::runtime_error("Wrong input file format");
+            }
+        }
+        void loadTree(std::istream& is)
+        {
+            std::string line;
+            std::getline(is, line, EOL);
+            std::istringstream iss(line);
+            checkHeader(iss);
+
+            while(std::getline(is, line, EOL))
+            {
+                std::istringstream iss(line);
+                std::pair<std::any, std::optional<std::size_t>> node = Node::parseNode(iss);
+                insertNode(node);
+            }
         }
     };
 
