@@ -4,14 +4,14 @@
 #ifndef SDS_NARY_TREE_HPP
 #define SDS_NARY_TREE_HPP
 
-#include "node_type.hpp"
-#include <iostream>
+#include "node.hpp"
 #include <deque>
+#include <iostream>
 #include <cassert>
 
 namespace sds {
 
-    // класс дерева
+    // Класс дерева.
     class NaryTree
     {
     private:
@@ -19,21 +19,28 @@ namespace sds {
 
     public:
 
-        // структоры
-        NaryTree(): root(std::make_shared<Node>()) {}
-        NaryTree(std::any const& data, std::optional<std::size_t> const& parent, std::size_t level): 
-            root(std::make_shared<Node>(data, parent, level)) {}
-        NaryTree(std::any && data, std::optional<std::size_t> && parent, std::size_t level): 
-            root(std::make_shared<Node>(std::move(data), std::move(parent), level)) {}
-        NaryTree(Node::PointerType node_ptr): root(node_ptr) {}
+        // Структоры
+        NaryTree(): root(std::make_shared<Node>(true)) {}
+        NaryTree(std::any const& data, std::optional<std::size_t> const& parent, std::size_t level):
+            root(std::make_shared<Node>(data, parent, level, true)) {}
+        NaryTree(std::any && data, std::optional<std::size_t> && parent, std::size_t level):
+            root(std::make_shared<Node>(std::move(data), std::move(parent), level, true)) {}
+        NaryTree(Node::PointerType node_ptr): root(node_ptr)
+        {
+            root->id = 0;
+            Node::resetNodeCounter(1);
+        }
+
         ~NaryTree() = default;
 
-        // аксессоры
+        // Аксессоры
         Node::PointerType getRoot() const noexcept {
             return root;
         }
-        // breadth-first search
+        // Возвращает узел дерева по его id.
         Node::PointerType findNodeById(std::size_t id) {
+
+            // Breadth-first search
 
             std::deque<Node::PointerType> deque;
             deque.push_back(root);
@@ -54,24 +61,42 @@ namespace sds {
             return nullptr;
         }
 
-        // модификаторы
+        // Модификаторы
+
+        // Добавляет потомок для узла дерева.
+        // Аргументы:
+        // parent - узел
+        // data - данные для добавляемого узла
+        // Возвращает:
+        // Node::PointerType - указатель на добавленный узел.
         Node::PointerType addChild(Node::PointerType& parent, std::any const& data) {
-            parent->kids.push_back(sds::makePointer(data, std::make_optional<std::size_t>(parent->id), parent->level + 1));
+            parent->kids.push_back(sds::makePointer(data, std::make_optional<std::size_t>(parent->id), 
+                                    parent->level + 1));
             return parent->kids.back();
         }
+        // Добавляет потомок для узла дерева.
+        // Аргументы:
+        // parent - узел
+        // data - данные для добавляемого узла
+        // Возвращает:
+        // Node::PointerType - указатель на добавленный узел.
         Node::PointerType addChild(Node::PointerType& parent, std::any && data) {
-            parent->kids.push_back(sds::makePointer(std::move(data), std::make_optional<std::size_t>(parent->id), parent->level + 1));
+            parent->kids.push_back(sds::makePointer(std::move(data), std::make_optional<std::size_t>(parent->id), 
+                                    parent->level + 1));
             return parent->kids.back();
         }
+        // Вставляет узел в дерево. Используется при загрузке дерева из файла.
+        // Аргументы:
+        // Пара: значение типа std::any и id родителя узла
         void insertNode(std::pair<std::any, std::optional<std::size_t>> const& node)
         {
-            if(!node.second) { // root
+            if(!node.second) {                                                  // root
                 root->data = node.first;
                 root->type = getNodeTypeFromAny(root->data);
                 root->parent = node.second;
             }
-            else { // not root
-                Node::PointerType node_to_add_to = findNodeById(*node.second); // find parent
+            else {                                                              // not root
+                Node::PointerType node_to_add_to = findNodeById(*node.second);  // find parent
                 if(!node_to_add_to) {
                     std::string msg = "Couldn't find node with ID = " + std::to_string(*node.second);
                     throw std::runtime_error(msg);
@@ -79,10 +104,14 @@ namespace sds {
                 addChild(node_to_add_to, node.first);
             }
         }
-
-        // breadth-first algorithm
-        std::vector<Node::PointerType> prepareNodesVector()
+        // Подготавливает вектор ссылок на текущие узлы дерева для печати,
+        // выгрузки или тестирования.
+        // Возвращает:
+        // std::vector<Node::PointerType> - вектор
+        std::vector<Node::PointerType> getNodesVector()
         {
+            // breadth-first algorithm
+
             std::vector<Node::PointerType> vec;
             std::deque<Node::PointerType> deque;
 
@@ -101,7 +130,13 @@ namespace sds {
 
             return vec;
         }
-
+        // Возвращает индекс последнего элемента в векторе, имеющего такой же уровени как и 
+        // элемент с индексом start. Используется при печати дерева.
+        // Аргументы:
+        // vec - вектор ссылок на узлы дерева
+        // start - индекс стартового элемента диапазона
+        // Возвращает:
+        // std::size_t - идекс последнего элемента с таким же уровнем
         std::size_t getFinalIndexOfTheSameLevel(std::vector<Node::PointerType> const& vec, std::size_t start) noexcept
         {
             assert(start < vec.size());
@@ -115,7 +150,7 @@ namespace sds {
 
             return (i - 1);
         }
-
+        // Выводит на экран диапазон вектора с индексами [start, end].
         void printRange(std::vector<Node::PointerType> const& vec, std::size_t start, std::size_t end) 
         {
             assert(start < vec.size());
@@ -137,11 +172,10 @@ namespace sds {
 
             std::cout << "\n\n";
         }
-
-        // вывод на экран
+        // Выводит дерево на экран.
         void print() 
         {
-            std::vector<Node::PointerType> print_data(std::move(prepareNodesVector()));
+            std::vector<Node::PointerType> print_data(std::move(getNodesVector()));
 
             std::size_t start = 0, end = getFinalIndexOfTheSameLevel(print_data, start);
 
@@ -158,15 +192,19 @@ namespace sds {
 
             std::cout << "\n";
         }
-
+        // Сериализует заголовок формата файла хранения дерева.
+        // Аргументы:
+        // os - поток для вывода
         void outputHeader(std::ostream& os)
         {
             os << MAGIC_TAG << DELIM << VERSION << "\n";
         }
-
+        // Сериализует дерево в файл.
+        // Аргументы:
+        // os - поток для вывода
         void saveTree(std::ostream& os)
         {
-            std::vector<Node::PointerType> save_data(std::move(prepareNodesVector()));
+            std::vector<Node::PointerType> save_data(std::move(getNodesVector()));
 
             outputHeader(os);
             for(std::size_t i = 0; i != save_data.size(); ++i) {
@@ -176,14 +214,15 @@ namespace sds {
                 }
             }
         }
-
+        // Проверяет правильность заголовка формата хранения дерева.
+        // Аргументы:
+        // is - поток для ввода
         void checkHeader(std::istream& is)
         {
             char ch;
             std::string tag, version;
 
-            // читаем до разделителя
-            while(is.get(ch))
+            while(is.get(ch))                       // читаем до разделителя
             {
                 if(ch != DELIM) {
                     tag.push_back(ch);
@@ -193,7 +232,7 @@ namespace sds {
                 }
             }
             
-            if(tag != MAGIC_TAG) {
+            if(tag != MAGIC_TAG) {                  // проверяем тэг
                 throw std::runtime_error("Wrong input file format");
             }
 
@@ -202,10 +241,13 @@ namespace sds {
                 version.push_back(ch);
             }
 
-            if(std::stoi(version) != VERSION) {
+            if(std::stoi(version) != VERSION) {     // проверяем версию сериализатора
                 throw std::runtime_error("Wrong input file format");
             }
         }
+        // Загружает дерево из файлового потока.
+        // Аргументы:
+        // is - поток для ввода
         void loadTree(std::istream& is)
         {
             std::string line;
@@ -221,8 +263,6 @@ namespace sds {
             }
         }
     };
-
-
 
 } // namespace sds
 

@@ -1,5 +1,0 @@
-<magic_tag><version>
-{parent ID} value_type:value
-
-(if string)
-{parent ID} value_type:str_len:value

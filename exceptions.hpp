@@ -9,14 +9,14 @@
 
 namespace sds {
 
-    // Неподдерживаемый формат типа узла дерева
-
+    // Ошибочный формат типа узла дерева
     class BadNodeTypeFormat: public std::runtime_error
     {
     public:
         BadNodeTypeFormat(std::string const& msg): std::runtime_error(msg) {};
     };
 
+    // Ошибка десериализации (чтения формата файла)
     class DeserialisationException: public std::runtime_error
     {
     public:

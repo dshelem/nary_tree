@@ -1,8 +1,8 @@
-// Модуль типа узла дерева
+// Модуль определения гетерогенного узла дерева
 // Автор Д. Шелемех, 2021
 
-#ifndef SDS_NODE_TYPE_HPP
-#define SDS_NODE_TYPE_HPP
+#ifndef SDS_NODE_HPP
+#define SDS_NODE_HPP
 
 #include "exceptions.hpp"
 #include "constants.hpp"
@@ -19,12 +19,9 @@
 
 namespace sds {
 
-    // актуальный тип данных узла
-
-    // для расширения добавить перечисления сюда,
-    // добавить функцию isNewType(...) и 
-    // обновить операторы ввода / вывода
-
+    // Класс-перечисление фактического типа данных узла.
+    // Для расширения добавить перечисления сюда, добавить функцию isNewType(...) и 
+    // обновить операторы и функции ввода / вывода
     enum class NodeType {
         Undefined = 0,
         Char = 10, 
@@ -34,9 +31,10 @@ namespace sds {
         String = 60
     };
 
-    // для расширения добавить функцию isNewType(...), 
-    // обновить перечисление enum class NodeTypeб
-    // и операторы ввода / вывода
+
+    // Функции определения фактического типа данных.
+    // Для расширения добавить функцию isNewType(...), обновить перечисление enum class NodeType
+    // и операторы и функции ввода / выводаа
 
     inline bool isChar(std::any any) noexcept {
         return any.type() == typeid(char);
@@ -54,9 +52,11 @@ namespace sds {
         return any.type() == typeid(std::string);
     }
 
-    // вывод хранимого значения
-    // для расширения типов добавить обработку типа сюда, 
-    // добавить функцию isNewType(...) и новый тип в enum class NodeType
+
+    // Для расширения типов добавить обработку нового типа сюда, 
+    // добавить функцию isNewType(...) и новый тип в enum class NodeType.
+    
+    // Используется в выводе узла.
 
     std::ostream& operator<<(std::ostream& os, const std::any& any)
     {
@@ -99,6 +99,7 @@ namespace sds {
         return os;
     }
 
+    // Возвращает фактический тип данных узла из аргумента any.
     NodeType getNodeTypeFromAny(std::any const& any) 
     {
         if(sds::isChar(any)) {
@@ -129,53 +130,64 @@ namespace sds {
         return sds::NodeType::Undefined;
     }
 
-    // узел дерева
-
+    // Класс узла дерева.
     class Node
     {
     public:
-        // объявления типов
-
-        // так как дерево будет возвращать узлы после вставки - расшаренное владение
+        // Так как дерево будет возвращать узлы после вставки - расшаренное владение.
         using PointerType = std::shared_ptr<Node>;
-        // контейнер для ссылок на дочерние элементы
+        // Контейнер для ссылок на дочерние элементы.
         using KidsContainerType = std::vector<PointerType>;
 
     private:
         friend class NaryTree;
 
-        // счетчик созданных узлов
-        inline static std::size_t counter = 0;
-
-        // ID узла
-        std::size_t id;
-        // номер родителя
-        std::optional<std::size_t> parent;
-        // данные
-        /*  
-            Выбрал std::any из соображений экономии памяти:
+        
+        inline static std::size_t counter = 0;  // счетчик созданных узлов
+        std::size_t id;                         // id узла
+        std::optional<std::size_t> parent;      // id родителя
+        std::any data;                          // данные
+        /*  Выбрал std::any из соображений экономии памяти:
             sizeof(struct for node) = 56
             sizeof(variant) = 40
-            sizeof(any) = 16 
+            sizeof(any) = 16
+            и возможности runtime определения фактического типа значения
         */
-        std::any data;
-        // тип хранимого значения
-        NodeType type;
-        // уровень (номер строки для вывода на экран)
-        std::size_t level;
-        // дочерние узлы
-        KidsContainerType kids;
+        NodeType type;                          // тип хранимого значения
+        std::size_t level;                      // уровень узла в дереве 0/1/... (номер строки для вывода на экран)
+        KidsContainerType kids;                 // дочерние узлы          
 
     public:
-        // структоры
-        Node(): id(Node::counter++), parent(std::nullopt), data(std::make_any<std::string>("Dummy Node")), 
-            type(getNodeTypeFromAny(data)), level(0), kids() {}
-        Node(std::any const& any, std::optional<std::size_t> const& parent, std::size_t level): 
-            id(Node::counter++), parent(parent), data(any), type(getNodeTypeFromAny(data)), level(level), kids() {}
-        Node(std::any && any, std::optional<std::size_t> && parent, std::size_t level): 
+        // Структоры
+        Node(bool reset_counter = false): id(Node::counter++), parent(std::nullopt), data(std::make_any<std::string>("Dummy Node")), 
+            type(getNodeTypeFromAny(data)), level(0), kids() 
+        {   
+            // при создании нового дерева обнуляем счетчик id класса узлов
+            if(reset_counter) {
+                id = 0;
+                counter = 1;
+            }
+        }
+        Node(std::any const& any, std::optional<std::size_t> const& parent, std::size_t level, bool reset_counter = false): 
+            id(Node::counter++), parent(parent), data(any), type(getNodeTypeFromAny(data)), level(level), kids()
+        {
+            // при создании нового дерева обнуляем счетчик id класса узлов
+            if(reset_counter) {
+                id = 0;
+                counter = 1;
+            }
+        }
+        Node(std::any && any, std::optional<std::size_t> && parent, std::size_t level, bool reset_counter = false): 
             id(Node::counter++), parent(parent), data(std::move(any)), type(getNodeTypeFromAny(data)), 
-            level(level), kids() {}
-        Node(Node const& other): 
+            level(level), kids()
+        {
+            // при создании нового дерева обнуляем счетчик id класса узлов
+            if(reset_counter) {
+                id = 0;
+                counter = 1;
+            }
+        }
+        Node(Node const& other):
             id(Node::counter++), parent(other.parent), data(other.data), type(other.type), level(other.level), 
             kids(other.kids) {}
         Node(Node && other) noexcept: 
@@ -183,11 +195,11 @@ namespace sds {
             level(other.level), kids(std::move(other.kids)) {}
         ~Node() = default;
 
-        // присваивание
+        // Присваивание
         Node& operator=(Node const& ) = delete;
         Node& operator=(Node && ) = delete;
 
-        // модификаторы
+        // Модификаторы
         Node& swap(Node& other) {
             std::swap(id, other.id);
             std::swap(parent, other.parent);
@@ -197,8 +209,13 @@ namespace sds {
             kids.swap(other.kids);
             return *this;
         }
+        // Обнуляет счетчик id класса узлов (для конструирования нового дерева)
+        static void resetNodeCounter(std::size_t new_counter = 0)
+        {
+            counter = new_counter;
+        }
 
-        // запросы
+        // Запросы
         bool isEmpty() const noexcept {
             return type == NodeType::Undefined;
         }
@@ -214,6 +231,9 @@ namespace sds {
         std::size_t getLevel() const noexcept {
             return level;
         }
+        std::any getData() const noexcept {
+            return data;
+        }
 
         // IO
         friend std::ostream& operator<<(std::ostream& os, const Node& node)
@@ -224,7 +244,7 @@ namespace sds {
             }
             os << "{";
 
-            // вывод родителя
+            // вывод id родителя
             if(node.parent) {
                 os << *node.parent;
             }
@@ -243,6 +263,8 @@ namespace sds {
 
             return os;
         }
+        // Парсит узел из istream.
+        // Возвращает пару из значения типа std::any и id родителя узла.
         static std::pair<std::any, std::optional<std::size_t>> parseNode(std::istream& is)
         {
             char ch;
@@ -268,7 +290,7 @@ namespace sds {
                 }
             }
 
-            if(string == ROOT_STR) {
+            if(string == ROOT_STR) { // корневой узел
                 opt_parent = std::nullopt;
             }
             else {
@@ -371,7 +393,7 @@ namespace sds {
         }
     };
 
-    // мейкеры
+    // Мейкеры
     inline Node::PointerType 
     makePointer(std::any const& data, std::optional<std::size_t> const& parent, std::size_t level)
     {
