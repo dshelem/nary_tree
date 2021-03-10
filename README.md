@@ -15,9 +15,11 @@
 ```
 <magic_tag><version>
 {parent ID} value_type:value
+...
 
 <if string>
 {parent ID} value_type:str_len:value
+...
 ```
 См. также файлы `in_file.txt` и `out_file.txt` для наглядного представления формата файла данных.
 

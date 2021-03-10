@@ -39,7 +39,7 @@ namespace sds {
     }
     // Загружает дерево из файла (обертка для открытия / закрытия файла).
     // Аргументы:
-    // tree - дерево
+    // tree - дерево (подразумевается _пустое_ дерево)
     // in_file_name - имя файла
     void loadTreeFromFile(sds::NaryTree& tree, std::string const& in_file_name)
     {
@@ -57,7 +57,7 @@ namespace sds {
     }
     // Сохраняет дерево в файл (обертка для открытия / закрытия файла).
     // Аргументы:
-    // tree - дерево
+    // tree - дерево (подразумевается _пустое_ дерево)
     // out_file_name - имя файла
     void saveTreeToFile(sds::NaryTree& tree, std::string const& out_file_name)
     {

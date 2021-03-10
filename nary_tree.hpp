@@ -11,14 +11,13 @@
 
 namespace sds {
 
-    // Класс дерева.
+    // Класс дерева
     class NaryTree
     {
     private:
         Node::PointerType root;
 
     public:
-
         // Структоры
         NaryTree(): root(std::make_shared<Node>(true)) {}
         NaryTree(std::any const& data, std::optional<std::size_t> const& parent, std::size_t level):
@@ -63,7 +62,7 @@ namespace sds {
 
         // Модификаторы
 
-        // Добавляет потомок для узла дерева.
+        // Добавляет потомка для узла дерева.
         // Аргументы:
         // parent - узел
         // data - данные для добавляемого узла
@@ -74,7 +73,7 @@ namespace sds {
                                     parent->level + 1));
             return parent->kids.back();
         }
-        // Добавляет потомок для узла дерева.
+        // Добавляет потомка для узла дерева.
         // Аргументы:
         // parent - узел
         // data - данные для добавляемого узла
@@ -104,8 +103,7 @@ namespace sds {
                 addChild(node_to_add_to, node.first);
             }
         }
-        // Подготавливает вектор ссылок на текущие узлы дерева для печати,
-        // выгрузки или тестирования.
+        // Подготавливает вектор ссылок на текущие узлы дерева для печати, выгрузки или тестирования.
         // Возвращает:
         // std::vector<Node::PointerType> - вектор
         std::vector<Node::PointerType> getNodesVector()
@@ -130,7 +128,7 @@ namespace sds {
 
             return vec;
         }
-        // Возвращает индекс последнего элемента в векторе, имеющего такой же уровени как и 
+        // Возвращает индекс последнего элемента в векторе, имеющего такой же уровень как и 
         // элемент с индексом start. Используется при печати дерева.
         // Аргументы:
         // vec - вектор ссылок на узлы дерева
@@ -199,7 +197,7 @@ namespace sds {
         {
             os << MAGIC_TAG << DELIM << VERSION << "\n";
         }
-        // Сериализует дерево в файл.
+        // Сериализует дерево.
         // Аргументы:
         // os - поток для вывода
         void saveTree(std::ostream& os)
@@ -245,7 +243,7 @@ namespace sds {
                 throw std::runtime_error("Wrong input file format");
             }
         }
-        // Загружает дерево из файлового потока.
+        // Загружает дерево из потока.
         // Аргументы:
         // is - поток для ввода
         void loadTree(std::istream& is)

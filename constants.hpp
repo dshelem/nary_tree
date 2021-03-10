@@ -1,4 +1,4 @@
-// Константы проекта
+// Константы
 // Автор Д. Шелемех, 2021
 
 #ifndef SDS_CONSTANTS_HPP
@@ -15,13 +15,12 @@ namespace sds {
     // Версия сериализатора
     const int VERSION       = 1;
     // Идентификатор корня
-    const char* ROOT_STR   = "root";
+    const char* ROOT_STR    = "root";
     // Ширина консоли (в символах)
-    const int CON_WIDTH = 136;
+    const int CON_WIDTH     = 136;
     // Ширина узла для печати (в символах)
-    const int NODE_WIDTH = 14;
+    const int NODE_WIDTH    = 14;
 
 } // namespace sds
-
 
 #endif

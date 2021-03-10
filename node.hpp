@@ -34,7 +34,7 @@ namespace sds {
 
     // Функции определения фактического типа данных.
     // Для расширения добавить функцию isNewType(...), обновить перечисление enum class NodeType
-    // и операторы и функции ввода / выводаа
+    // и операторы / функции ввода / вывода
 
     inline bool isChar(std::any any) noexcept {
         return any.type() == typeid(char);
@@ -56,7 +56,7 @@ namespace sds {
     // Для расширения типов добавить обработку нового типа сюда, 
     // добавить функцию isNewType(...) и новый тип в enum class NodeType.
     
-    // Используется в выводе узла.
+    // Используется в выводе в поток узла.
 
     std::ostream& operator<<(std::ostream& os, const std::any& any)
     {
@@ -134,7 +134,7 @@ namespace sds {
     class Node
     {
     public:
-        // Так как дерево будет возвращать узлы после вставки - расшаренное владение.
+        // Так как дерево будет возвращать узлы после вставки - std::shared_ptr.
         using PointerType = std::shared_ptr<Node>;
         // Контейнер для ссылок на дочерние элементы.
         using KidsContainerType = std::vector<PointerType>;
@@ -142,24 +142,24 @@ namespace sds {
     private:
         friend class NaryTree;
 
-        
         inline static std::size_t counter = 0;  // счетчик созданных узлов
         std::size_t id;                         // id узла
         std::optional<std::size_t> parent;      // id родителя
         std::any data;                          // данные
         /*  Выбрал std::any из соображений экономии памяти:
-            sizeof(struct for node) = 56
+            sizeof(struct for node) = 80
             sizeof(variant) = 40
             sizeof(any) = 16
             и возможности runtime определения фактического типа значения
         */
         NodeType type;                          // тип хранимого значения
-        std::size_t level;                      // уровень узла в дереве 0/1/... (номер строки для вывода на экран)
+        std::size_t level;                      // уровень узла в дереве: 0/1/... (номер строки для вывода на экран)
         KidsContainerType kids;                 // дочерние узлы          
 
     public:
         // Структоры
-        Node(bool reset_counter = false): id(Node::counter++), parent(std::nullopt), data(std::make_any<std::string>("Dummy Node")), 
+        Node(bool reset_counter = false): id(Node::counter++), parent(std::nullopt), 
+            data(std::make_any<std::string>("Dummy Node")), 
             type(getNodeTypeFromAny(data)), level(0), kids() 
         {   
             // при создании нового дерева обнуляем счетчик id класса узлов
@@ -242,9 +242,9 @@ namespace sds {
             if(&os == &std::cout) {
                 os << "[" << node.id << "] ";
             }
-            os << "{";
 
             // вывод id родителя
+            os << "{";
             if(node.parent) {
                 os << *node.parent;
             }
